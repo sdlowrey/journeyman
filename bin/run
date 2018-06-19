@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Run the app container locally. Use -d to run interactive.
+
+VERSION=$(cat VERSION)
+TEST_MODE=false
+
+[[ $1 == "-t" ]] && TEST_MODE=true
+
+if $TEST_MODE; then
+    docker run -it --rm --name journeyman -p 8080:8080/tcp --entrypoint /bin/ash journeyman:$VERSION
+    exit $?
+fi
+
+docker run --rm --name journeyman -p 8080:8080/tcp journeyman:$VERSION

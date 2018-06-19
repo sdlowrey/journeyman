@@ -1,0 +1,15 @@
+FROM alpine:3.7
+
+# Requires VERSION environment variable defined in build script
+RUN mkdir /app
+
+ADD journeyman.tar.gz /app/
+ADD assets /app/assets/
+ADD data /app/data/
+
+ENV DATA_PATH /app/data/
+ENV TEMPLATE_PATH /app/assets/
+
+ENTRYPOINT /app/call
+
+EXPOSE 8080

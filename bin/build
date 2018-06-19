@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Build the build container then use it to build the dist container
+
+VERSION=$(cat VERSION)
+
+docker build -t journeyman-build:$VERSION -f Dockerfile.build .
+docker run journeyman-build:$VERSION > journeyman.tar.gz
+docker build -t journeyman:$VERSION -f Dockerfile.dist .
+
+# TODO: push build artifact to registry
+# docker tag journeyman:latest username/journeyman:$VERSION
+# docker push username/journeyman:$VERSION

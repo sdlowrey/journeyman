@@ -1,0 +1,7 @@
+FROM golang:1.10.3-alpine3.7
+
+RUN mkdir /tmp/build
+ADD call.go /tmp/build
+WORKDIR /tmp/build
+RUN go build call.go
+CMD tar -czf - call
