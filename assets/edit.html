@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.Company}}</title>
+</head>
+<body>
+    <h1>Editing {{.Company}}</h1>
+    <form action="/save/{{.Company}}" method="POST">
+        <div>
+            <label for="when">When:</label>
+            <input id="when" name="when" type="date" value="{{.When}}"/>
+        </div>
+        <div>
+            <label for="where">Where:</label>
+            <input id="where" name="where" type="text" value="{{.Where}}"></div>
+        <div>
+            <label for="caller">Caller/Interviewer:</label>
+            <input id="caller" name="caller" type="text" value="{{.Caller}}">
+        </div>
+        <div>
+            <label for="referrer">Referred By:</label>
+            <input id="referrer" name="referrer" type="text" value="{{.Referrer}}">
+        </div>
+        <div>
+            <label for="notes">Notes</label><br>
+            <textarea id="notes" name="notes" rows="20" cols="80">{{printf "%s" .Notes}}</textarea>
+        </div>
+        <div>
+            <input type="submit" value="Save">
+        </div>
+    </form>
+</body>
+</html>
