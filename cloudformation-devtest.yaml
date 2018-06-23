@@ -1,0 +1,51 @@
+Description: Single-instance infra for development and testing
+
+Parameters:
+  KeyName:
+    Description: Name of existing EC2 KeyPair for SSH access
+    Type: AWS::EC2::KeyPair::KeyName
+  SSHSourceIp:
+    Description: IP address range allowed to SSH to the EC2 instance
+    Type: String
+    MinLength: 9
+    MaxLength: 18
+    Default: 0.0.0.0/0
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IPV4 CIDR address like 10.0.0.0/24
+
+Resources:
+  journeyVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.10.0.0/24
+      Tags:
+      - Key: Name
+        Value: Journeyman
+  journeyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-afd15ed0  # AmzLinux2 LTS candidate 2
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      Tags:
+      - Key: Name
+        Value: Journeyman Test
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SSH Inbound
+      SecurityGroupIngress:
+        IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref SSHSourceIp
+
+Outputs:
+  InstanceId:
+    Description: EC2 instance identifier
+    Value: !Ref journeyInstance
+  AZ:
+    Description: Availability Zone of the EC2 instance
+    Value: !GetAtt
+    - journeyInstance
+    - AvailabilityZone

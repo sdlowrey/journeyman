@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Make a simple AWS CloudFormation stack for dev/test use.
+
+REQUIRED_COMMANDS="aws jq"
+STACK_END_STATES=(
+    "CREATE_COMPLETE"
+    "CREATE_FAILED"
+    "ROLLBACK_COMPLETE"
+    "ROLLBACK_FAILED"
+)
+USAGE="Usage $(basename $0) TEMPLATE_FILE STACK_NAME KEYPAIR_NAME SSH_CIDR"
+
+for cmd in $REQUIRED_COMMANDS; do
+    which -s $cmd || {
+        echo "The \"$cmd\" command is required."
+        exit 2
+    }
+done
+
+[[ $# != 4 ]] && {
+    echo $USAGE
+    exit 1
+}
+template=$1
+stack_name=$2
+key_name=$3
+ssh_cidr=$4
+
+function contains {
+    local e match="$1"
+    shift
+    for e; do [[ $e == $match ]] && return 0; done
+    return 1
+}
+
+function stack_state {
+    aws cloudformation describe-stacks --stack-name $1 | jq -r .Stacks[].StackStatus
+}
+
+function stack_operation_ended {
+    local stack=$1 end_states=$2
+    contains $(stack_state $stack) ${end_states[*]} && return 0
+    return 1
+}
+
+out=$(aws cloudformation create-stack \
+         --stack-name $stack_name \
+         --template-body file://$template \
+         --parameters \
+             ParameterKey=KeyName,ParameterValue=$key_name \
+             ParameterKey=SSHSourceIp,ParameterValue=$ssh_cidr)
+
+stack_id=$(echo $out | jq -r .StackId)
+while ! stack_operation_ended $stack_id ${STACK_END_STATES}; do
+    echo -n "."
+    sleep 3
+done
+echo -e "\nStack operation ended. Status is $(stack_state $stack_id)."
+echo "Stack Name: $stack_name"
+echo "Stack ID:   $stack_id"
