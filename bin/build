@@ -3,10 +3,27 @@
 
 VERSION=$(cat VERSION)
 
-docker build -t journeyman-build:$VERSION -f Dockerfile.build .
-docker run journeyman-build:$VERSION > journeyman.tar.gz
-docker build -t journeyman:$VERSION -f Dockerfile.dist .
+if ! docker build -t journeyman-build:$VERSION -f Dockerfile.build .; then
+    echo "Build failed"
+    exit 1
+fi
 
-# TODO: push build artifact to registry
-# docker tag journeyman:latest username/journeyman:$VERSION
-# docker push username/journeyman:$VERSION
+if ! docker run journeyman-build:$VERSION > journeyman.tar.gz; then
+    echo "Archive creation failed"
+    exit 2
+fi
+
+if ! docker build -t sdlowrey/journeyman:$VERSION -f Dockerfile.dist .; then
+    echo "Image creation failed"
+    exit 3
+fi
+
+if ! docker tag sdlowrey/journeyman:$VERSION sdlowrey/journeyman:latest; then
+    echo "Docker tag failed"
+    exit 4
+fi
+
+if ! docker push sdlowrey/journeyman:$VERSION; then
+    echo "Docker push failed"
+    exit 5
+fi

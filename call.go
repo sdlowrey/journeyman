@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"html/template"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 
@@ -70,6 +71,7 @@ func renderTemplate(w http.ResponseWriter, tmpl string, c *Call) {
 func editHandler(w http.ResponseWriter, _ *http.Request, company string) {
 	c, err := getCall(company)
 	if err != nil {
+		log.WithFields(log.Fields{"company": company}).Info("creating")
 		c = &Call{
 			Company: company,
 		}
@@ -95,6 +97,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, company string) {
 		Referrer:	referrer,
 		Notes: 		notes,
 	}
+	log.WithFields(log.Fields{"company": company}).Info("saving")
 	err = c.save()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -105,8 +108,10 @@ func saveHandler(w http.ResponseWriter, r *http.Request, company string) {
 // viewHandler presents a read-only view of a call.
 // If the call is not found, redirects to the edit view.
 func viewHandler(w http.ResponseWriter, r *http.Request, company string) {
+	log.WithFields(log.Fields{"company": company}).Info("viewing")
 	c, err := getCall(company)
 	if err != nil {
+		log.WithFields(log.Fields{"company": company}).Info("does not exist")
 		http.Redirect(w, r, "/edit/" + company, http.StatusFound)
 		return
 	}
@@ -146,6 +151,9 @@ func getConfig() Config {
 	if err != nil {
 		log.Fatal("unable to parse templates")
 	}
+	log.WithFields(log.Fields{
+		"dataPath": cfg.dataPath,
+		"templatePath": templatePath}).Info("configuration")
 	return cfg
 }
 

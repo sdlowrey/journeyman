@@ -1,7 +1,17 @@
 FROM golang:1.10.3-alpine3.7
 
-RUN mkdir /tmp/build
-ADD call.go /tmp/build
-WORKDIR /tmp/build
+ENV GOPATH /tmp/build
+ENV workdir $GOPATH/src/sdlowrey/journeyman/
+ENV bindir /usr/local/bin/
+
+RUN apk update
+RUN apk add git
+RUN mkdir -p $workdir
+ADD call.go Gopkg.* vendor/ $workdir
+WORKDIR $workdir
+
+# Until golang is available on alpine 3.8...
+RUN wget -O $bindir/dep https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 && chmod +x $bindir/dep
+RUN dep ensure
 RUN go build call.go
 CMD tar -czf - call
