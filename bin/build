@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Build the build container then use it to build the dist container
 
+# TODO use separate versions for build and dist
 VERSION=$(cat VERSION)
 
 if ! docker build -t journeyman-build:$VERSION -f Dockerfile.build .; then
@@ -18,12 +19,13 @@ if ! docker build -t sdlowrey/journeyman:$VERSION -f Dockerfile.dist .; then
     exit 3
 fi
 
-if ! docker tag sdlowrey/journeyman:$VERSION sdlowrey/journeyman:latest; then
-    echo "Docker tag failed"
-    exit 4
-fi
-
-if ! docker push sdlowrey/journeyman:$VERSION; then
-    echo "Docker push failed"
-    exit 5
-fi
+# move to another script - only tag latest when releasing
+#if ! docker tag sdlowrey/journeyman:$VERSION sdlowrey/journeyman:latest; then
+#    echo "Docker tag failed"
+#    exit 4
+#fi
+#
+#if ! docker push sdlowrey/journeyman:$VERSION; then
+#    echo "Docker push failed"
+#    exit 5
+#fi

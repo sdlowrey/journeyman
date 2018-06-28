@@ -1,6 +1,5 @@
 FROM alpine:3.7
 
-# Requires VERSION environment variable defined in build script
 RUN mkdir /app
 
 ADD journeyman.tar.gz /app/
