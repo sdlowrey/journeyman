@@ -19,6 +19,7 @@ var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 type Config struct {
 	dataPath string
 	templates *template.Template
+	logFormat log.JSONFormatter
 }
 
 // Call contains the details of a conversation.
@@ -69,6 +70,7 @@ func renderTemplate(w http.ResponseWriter, tmpl string, c *Call) {
 
 // editHandler presents a form for entering call data.
 func editHandler(w http.ResponseWriter, _ *http.Request, company string) {
+	log.WithFields(log.Fields{"company": company}).Debug("edit handler")
 	c, err := getCall(company)
 	if err != nil {
 		log.WithFields(log.Fields{"company": company}).Info("creating")
@@ -81,6 +83,7 @@ func editHandler(w http.ResponseWriter, _ *http.Request, company string) {
 
 // saveHandler creates a Call object, stores it, and redirects to an edit view.
 func saveHandler(w http.ResponseWriter, r *http.Request, company string) {
+	log.WithFields(log.Fields{"company": company}).Debug("save handler")
 	notes := r.FormValue("notes")
 	when, err := time.Parse("2006-01-02", r.FormValue("when"))
 	where := r.FormValue("where")
@@ -108,7 +111,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, company string) {
 // viewHandler presents a read-only view of a call.
 // If the call is not found, redirects to the edit view.
 func viewHandler(w http.ResponseWriter, r *http.Request, company string) {
-	log.WithFields(log.Fields{"company": company}).Info("viewing")
+	log.WithFields(log.Fields{"company": company}).Debug("view handler")
 	c, err := getCall(company)
 	if err != nil {
 		log.WithFields(log.Fields{"company": company}).Info("does not exist")
@@ -130,20 +133,23 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 	}
 }
 
+// getEnv returns the value of an environment variable (key); if the variable
+// is not defined, a default value is returned.
+func getEnv(key string, defaultValue string) string {
+	val, ok := os.LookupEnv(key)
+	if !ok {
+		val = defaultValue
+	}
+	return val
+}
+
+// getConfig sets up data and template resources via environment variables
 func getConfig() Config {
 	var err error
 
-	get := func(key string, def string) string {
-		val, ok := os.LookupEnv(key)
-		if !ok {
-			val = def
-		}
-		return val
-	}
-
 	cfg := Config{}
-	cfg.dataPath = get("DATA_PATH", "data/")
-	templatePath := get("TEMPLATE_PATH", "assets/")
+	cfg.dataPath = getEnv("DATA_PATH", "data/")
+	templatePath := getEnv("TEMPLATE_PATH", "assets/")
 	cfg.templates, err = template.ParseFiles(
 		templatePath + "/edit.html",
 		templatePath + "/view.html",
@@ -157,7 +163,19 @@ func getConfig() Config {
 	return cfg
 }
 
-var config = getConfig()
+var config Config
+
+func init() {
+	logFmt := getEnv("LOG_FORMAT", "text")
+	logLevel := getEnv("LOG_LEVEL", "info")
+	if logFmt == "json" {
+		log.SetFormatter(&log.JSONFormatter{})
+	}
+	if logLevel == "debug" {
+		log.SetLevel(log.DebugLevel)
+	}
+	config = getConfig()
+}
 
 func main() {
 	http.HandleFunc("/view/", makeHandler(viewHandler))
