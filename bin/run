@@ -1,14 +1,28 @@
 #!/usr/bin/env bash
-# Run the app container locally. Use -d to run interactive.
+# Run the app container locally.
+
+USAGE="usage: $(basename $0) [ -dhij ]"
+HELP="$USAGE\n
+Run the container.\n\n
+Options:\n
+  -d log debug messages\n
+  -h help\n
+  -i interactive (start ash shell)\n
+  -j JSON log format"
 
 VERSION=$(cat VERSION)
-TEST_MODE=false
+IMAGE=sdlowrey/journeyman:$VERSION
+DOCKER_OPTS="--rm --name journeyman -p 8080:8080/tcp"
 
-[[ $1 == "-t" ]] && TEST_MODE=true
+while getopts ":dhij" OPT; do
+    case $OPT in
+        h) echo -e $HELP && exit 0 ;;
+        d) DOCKER_OPTS="$DOCKER_OPTS -e LOG_LEVEL=debug" ;;
+        i) DOCKER_OPTS="$DOCKER_OPTS -it --entrypoint /bin/ash" ;;
+        j) DOCKER_OPTS="$DOCKER_OPTS -e LOG_FORMAT=json" ;;
+        \?) echo $USAGE && exit 1 ;;
+    esac
+done
 
-if $TEST_MODE; then
-    docker run -it --rm --name journeyman -p 8080:8080/tcp --entrypoint /bin/ash journeyman:$VERSION
-    exit $?
-fi
-
-docker run --rm --name journeyman -p 8080:8080/tcp journeyman:$VERSION
+echo "docker run $DOCKER_OPTS $IMAGE"
+docker run $DOCKER_OPTS $IMAGE
