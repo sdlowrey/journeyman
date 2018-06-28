@@ -12,10 +12,6 @@ Options:\n
 
 VERSION=$(cat VERSION)
 IMAGE=sdlowrey/journeyman:$VERSION
-
-LOG_DEBUG=false
-LOG_JSON=false
-INTERACTIVE=false
 DOCKER_OPTS="--rm --name journeyman -p 8080:8080/tcp"
 
 while getopts ":dhij" OPT; do
